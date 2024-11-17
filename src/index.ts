@@ -14,12 +14,19 @@ import { UserAPI } from './datasources/index.js';
 import { expressMiddleware } from '@apollo/server/express4';
 import cors from 'cors';
 import http from 'http';
+import { initializeMongoDB } from './database/mongoUtil.js';
+import { initializeRedis } from './database/redisUtil.js';
+import { initializeNeo4j } from './database/neo4jUtil.js';
 
 dotenv.config({ path: '.env' });
 
 if (process.env.SM) {
   process.env = { ...process.env, ...JSON.parse(process.env.SM) }
 }
+
+initializeRedis();
+initializeMongoDB();
+initializeNeo4j();
 
 //  __dirname returns the absolute path, whereas the getDirname function in the given code returns the directory name relative to the current working directory
 const __dirname = getDirname(import.meta.url);

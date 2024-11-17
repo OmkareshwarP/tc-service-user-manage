@@ -4,3 +4,4 @@ export * from './constant.js';
 export * from './pathResolveUtil.js';
 export * from './nanoId.js';
 export * from './timeUtil.js';
+export * from './neo4jUtil.js';
