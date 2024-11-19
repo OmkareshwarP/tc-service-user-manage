@@ -6,3 +6,10 @@ export interface IUser {
   lastName: string;
   fullName: string;
 }
+
+export interface IBrevoMailOptions {
+  receiverEmail: string;
+  subject: string;
+  bodyHtml: string;
+  bodyText: string;
+}
