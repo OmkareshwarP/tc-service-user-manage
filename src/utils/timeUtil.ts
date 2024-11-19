@@ -20,5 +20,9 @@ export const getTimestampForNDaysAgo = (days: number): number => {
   return timestampForNDaysAgo;
 }
 
+export const getCurrentISODate_YYYYMMDD = () => {
+  return new Date().toISOString().split('T')[0];
+}
+
 
 export { getCurrentTime, getCurrentEpochTimestamp };
