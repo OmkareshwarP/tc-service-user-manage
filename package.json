@@ -22,9 +22,11 @@
   },
   "dependencies": {
     "@apollo/server": "^4.11.2",
+    "@aws-sdk/client-s3": "^3.696.0",
     "@types/node": "^18.13.0",
     "apollo-server-errors": "^3.3.1",
     "axios": "^1.7.7",
+    "cassandra-driver": "^4.7.2",
     "dotenv-safe": "^8.2.0",
     "express": "^4.21.1",
     "graphql": "^16.9.0",
@@ -37,7 +39,7 @@
     "query-string": "^8.1.0",
     "redis": "^4.7.0",
     "tsc-watch": "^6.0.0",
-    "typescript": "^4.9.5"
+    "typescript": "^5.6.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
