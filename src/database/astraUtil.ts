@@ -24,12 +24,7 @@ export const initializeCassandraDBClient = async () => {
       logData('Connected to Astra DB', 'astraReady', 1, data);
     })
     .catch((err) => {
-      logError(
-        'Failed to create Astra DB connection',
-        'astraConnectionError',
-        10,
-        err
-      );
+      logError('Failed to create Astra DB connection', 'astraConnectionError', 10, err);
       process.exit(1);
     });
 };
@@ -57,15 +52,11 @@ const downloadConnectionBundleFromS3 = async () => {
   const response = await s3Client.send(getObjectCommand);
 
   if (response.Body) {
-    const writeStream = createWriteStream(
-      process.env.ASTRA_DB_SECURE_CONNECT_BUNDLE_PATH,
-    );
+    const writeStream = createWriteStream(process.env.ASTRA_DB_SECURE_CONNECT_BUNDLE_PATH);
 
     await new Promise((resolve, reject) => {
       if (response.Body instanceof Readable) {
-        response.Body.pipe(writeStream)
-          .on('close', resolve)
-          .on('error', reject);
+        response.Body.pipe(writeStream).on('close', resolve).on('error', reject);
       }
     });
   }

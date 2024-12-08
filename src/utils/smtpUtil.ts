@@ -4,51 +4,42 @@ import { getCurrentISODate_YYYYMMDD, logError } from './index.js';
 import axios from 'axios';
 
 export const sendBrevoMailAPI = async (mailOptions: IBrevoMailOptions) => {
-  const _isBrevoEmailOTPEnabled = await isBrevoEmailOTPEnabled();
-
-  if (!_isBrevoEmailOTPEnabled) {
-    throw new Error('You have reached maximum limit.');
-  }
-
   const emailData = {
     sender: { email: process.env.BREVO_SENDER_EMAIL },
     to: [{ email: mailOptions.receiverEmail }],
     subject: mailOptions.subject,
     htmlContent: mailOptions.bodyHtml,
-    text: mailOptions.bodyText
+    text: mailOptions.bodyText,
   };
 
   try {
-    await axios.post(
-      'https://api.brevo.com/v3/smtp/email',
-      emailData,
-      {
-        headers: {
-          'Api-Key': process.env.BREVO_API_KEY,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+      headers: {
+        'Api-Key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+      },
+    });
     const redisClient = getRedisClient();
     await redisClient.incr(`${process.env.REDIS_KEY_BrevoGlobalEmailCount}:${getCurrentISODate_YYYYMMDD()}`);
   } catch (error) {
     logError(error.message, 'sendBrevoMailAPIError', 5, error, { receiverEmail: mailOptions.receiverEmail, subject: mailOptions.subject });
-    throw (error)
+    throw error;
   }
-}
+};
 
 export const isBrevoEmailOTPEnabled = async (): Promise<boolean> => {
   const redisClient = getRedisClient();
   const redisKey = `${process.env.REDIS_KEY_BrevoGlobalEmailCount}:${getCurrentISODate_YYYYMMDD()}`;
 
-  const emailCount = await redisClient.get(redisKey);
+  const emailCount = (await redisClient.get(redisKey)) || '0';
 
   if (!emailCount) {
     await redisClient.set(redisKey, 0, { EX: 24 * 60 * 60 }); // Expiry in seconds
     return true;
   }
-  return parseInt(emailCount) < 3
-}
+  const _globalLimitPerDay = process.env.BREVO_GLOBAL_LIMIT_PER_DAY;
+  return parseInt(emailCount) < parseInt(_globalLimitPerDay);
+};
 
 export const getBrevoOTPMailOptions = (receiverEmail: string, otp: string): IBrevoMailOptions => {
   if (!otp && otp?.length < 4) {
@@ -131,7 +122,7 @@ export const getBrevoOTPMailOptions = (receiverEmail: string, otp: string): IBre
       <!-- Logo Section -->
       <img src="${logoUrl}" alt="Tweeter Club Logo" class="logo">
       <!-- Main Title -->
-      <h1>Verify your email to complete your Tweeter Club Sign-Up</h1>
+      <h1>Verify your email to complete your Tweeter Club Registration</h1>
       <!-- Information -->
       <p>To finish your registration, please enter the <strong>${otp?.length}</strong>-digit code in the verification window.</p>
       <!-- OTP Display -->
@@ -147,9 +138,9 @@ export const getBrevoOTPMailOptions = (receiverEmail: string, otp: string): IBre
 
   const options = {
     receiverEmail: receiverEmail,
-    subject: `${otp} - OTP for Tweeter Club Sign-Up`,
+    subject: `${otp} - OTP for Tweeter Club Registration`,
     bodyHtml,
-    bodyText: `Verify your email to complete your Tweeter Club Sign-Up. To finish your registration, please enter the ${otp?.length}-digit code in the verification window. Your OTP-Code is ${otp}. Website : ${websiteUrl}`
-  }
+    bodyText: `Verify your email to complete your Tweeter Club Registration. To finish your registration, please enter the ${otp?.length}-digit code in the verification window. Your OTP-Code is ${otp}. Website : ${websiteUrl}`,
+  };
   return options;
-}
+};

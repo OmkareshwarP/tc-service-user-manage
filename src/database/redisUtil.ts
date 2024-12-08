@@ -6,18 +6,14 @@ export let redis: RedisClientType;
 export const initializeRedis = () => {
   const redisUrl = process.env.REDIS_URL;
   redis = Redis.createClient({ url: redisUrl });
+
   redis
     .connect()
     .then((data) => {
       logData('Connected to auth redis', 'redisReady', 1, data);
     })
     .catch((err) => {
-      logError(
-        'Failed to create Redis connection',
-        'redisConnectionError',
-        10,
-        err
-      );
+      logError('Failed to create Redis connection', 'redisConnectionError', 10, err);
       process.exit(1);
     });
 
@@ -49,6 +45,7 @@ export const exists = async (key: string) => {
     throw err;
   }
 };
+
 export const getAllValues = async (key: string) => {
   try {
     const getList = await redis.lRange(key, 0, -1);
@@ -57,11 +54,8 @@ export const getAllValues = async (key: string) => {
     throw err;
   }
 };
-export const insertIntoHashMap = async (
-  objectKey: string,
-  objectField: string,
-  fieldValue: string
-) => {
+
+export const insertIntoHashMap = async (objectKey: string, objectField: string, fieldValue: string) => {
   try {
     await redis.hSet(objectKey, objectField, fieldValue);
   } catch (err) {
@@ -85,6 +79,7 @@ export const getAllFromHashMap = async (objectKey: string) => {
     throw err;
   }
 };
+
 export const getKey = async (objectKey: string) => {
   try {
     const value = await redis.get(objectKey);
@@ -93,20 +88,23 @@ export const getKey = async (objectKey: string) => {
     throw err;
   }
 };
+
 export const insertIntoList = async (objectKey: string, objectValue: string) => {
   try {
     await redis.lPush(objectKey, objectValue);
   } catch (err) {
     throw err;
   }
-}
-export const addMembersToSortedSet = async (key: string, members: { score: number, value: string }[]) => {
+};
+
+export const addMembersToSortedSet = async (key: string, members: { score: number; value: string }[]) => {
   try {
     await redis.zAdd(key, [...members]);
   } catch (err) {
     throw err;
   }
-}
+};
+
 export const getMemberScore = async (key: string, member: string) => {
   try {
     const score = await redis.zScore(key, member);
@@ -114,15 +112,16 @@ export const getMemberScore = async (key: string, member: string) => {
   } catch (err) {
     throw err;
   }
-}
+};
+
 export const deleteRedisKey = async (keys: string | string[]) => {
   try {
     await redis.del(keys);
   } catch (err) {
     throw err;
   }
-}
+};
 
 export const getRedisClient = () => {
   return redis;
-}
+};

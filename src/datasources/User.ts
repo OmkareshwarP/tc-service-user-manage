@@ -1,136 +1,171 @@
-import { IUser } from "../typeDefs.js";
-import { generateAlphaNumericId, generateResponse, isUsernameUnique, usersData } from "../utils/index.js";
+import AuthUtil from '../auth/index.js';
+import { getMongoDBClient } from '../database/mongoUtil.js';
+import { getKey, getRedisClient } from '../database/redisUtil.js';
+import { IUser } from '../typeDefs.js';
+import {
+  generateAlphaNumericId,
+  generateNumericId,
+  generateResponse,
+  getBrevoOTPMailOptions,
+  getCurrentEpochTimestamp,
+  isBrevoEmailOTPEnabled,
+  sendBrevoMailAPI,
+} from '../utils/index.js';
+import { getUserInformationByUserId } from '../utils/userCacheUtil.js';
 
 export const UserAPI = () => {
   return {
-    async createUser(firstName: string, lastName: string) {
+    async sendOTP(email: string) {
       try {
-        const userId = generateAlphaNumericId(15);
-        const fullName = firstName + ' ' + lastName;
-        const username = fullName.replace(/\s+/g, '') + "_" + userId;
-        if (!(username && isUsernameUnique(userId, username)))
-          return generateResponse(
-            true,
-            'Username already exists. Please try again',
-            400,
-            'usernameAlreadyExists',
-            null
-          );
-        usersData.push({ userId, firstName, lastName, fullName, username });
-        return generateResponse(
-          false,
-          'User created successfully',
-          200,
-          '',
-          { userId }
-        );
+        const _isBrevoEmailOTPEnabled = await isBrevoEmailOTPEnabled();
+        if (!_isBrevoEmailOTPEnabled) {
+          return generateResponse(true, 'The maximum OTP limit for today has been reached.', 'maxOtpLimitReached', 400, null);
+        }
+
+        const redisClient = getRedisClient();
+        const noOfOtpsSentForUserRedisKey = `${process.env.REDIS_KEY_NoOfOtpsSentForUser}:${email}`;
+        const otpsCount = (await getKey(noOfOtpsSentForUserRedisKey)) || '0';
+        const _userLimitPerDay = process.env.BREVO_USER_LIMIT_PER_DAY;
+        if (parseInt(otpsCount) >= parseInt(_userLimitPerDay)) {
+          return generateResponse(true, 'You have reached the maximum OTP limit.', 'userMaxOtpLimitReached', 400, null);
+        }
+
+        const otp = generateNumericId(6);
+        const otpKey = `${process.env.REDIS_KEY_OtpSentForUser}:${email}`;
+        await redisClient
+          .multi()
+          .set(otpKey, otp)
+          .expire(otpKey, 15 * 60)
+          .exec();
+
+        const _brevoMailOptions = getBrevoOTPMailOptions(email, otp);
+        await sendBrevoMailAPI(_brevoMailOptions);
+
+        if (otpsCount == '0') {
+          await redisClient.set(noOfOtpsSentForUserRedisKey, 1, { EX: 24 * 60 * 60 });
+        } else {
+          await redisClient.incr(noOfOtpsSentForUserRedisKey);
+        }
+        return generateResponse(false, 'The OTP has been sent to your email successfully', '', 200, 'done');
       } catch (error) {
-        throw (error)
+        throw error;
       }
     },
-    async updateUser(inputData: any) {
+    async verifyOTP(email: string, otp: string) {
       try {
-        const { userId, firstName, lastName, username } = inputData;
-        const _updateData: Partial<IUser> = {
-          ...(firstName && firstName.length > 0 && { firstName }),
-          ...(lastName && lastName.length > 0 && { lastName }),
-          ...(username && username.length > 0 && { username }),
+        const otpKey = `${process.env.REDIS_KEY_OtpSentForUser}:${email}`;
+        const redisClient = getRedisClient();
+        const otpToMatch = await redisClient.get(otpKey);
+        if (!otpToMatch) {
+          return generateResponse(true, `Your OTP has expired. Please try again`, 'otpExpired', 403, null);
+        }
+        const isOtpVerified = parseInt(otp) == parseInt(otpToMatch);
+        if (!isOtpVerified) {
+          return generateResponse(true, `Your OTP is incorrect. Please try again with correct OTP`, 'incorrectOtpProvided', 403, null);
+        }
+        await redisClient.del(otpKey);
+        return generateResponse(false, 'The OTP for your account has been verified successfully.', '', 200, 'done');
+      } catch (error) {
+        throw error;
+      }
+    },
+    async login(inputArgs: any) {
+      try {
+        const { userIdentifier, provider, deviceInfo, operatingSystem } = inputArgs;
+        const dbClient = getMongoDBClient();
+        const _collectionName = process.env.UsersCollection;
+        const user: IUser = (await dbClient.collection(_collectionName).findOne({ email: userIdentifier })) as any;
+        if (user) {
+          if (user.verificationStatus == 'verified') {
+            const token = await AuthUtil().generateToken({
+              userId: user.userId,
+              provider,
+              userIdentifier,
+              deviceInfo,
+              operatingSystem,
+            });
+            return generateResponse(false, 'User successfully logged in', 'userFoundAndVerified', 200, {
+              isNewUser: false,
+              token,
+            });
+          } else if (user.verificationStatus == 'notverified') {
+            return generateResponse(true, 'User not verified', 'userFoundAndNotVerified', 400, null);
+          } else {
+            return generateResponse(true, 'Invalid input found', 'invalidInput', 400, null);
+          }
+        } else {
+          return generateResponse(true, 'User does not exists', 'userNotFound', 404, {
+            isNewUser: true,
+            token: '',
+          });
+        }
+      } catch (error) {
+        throw error;
+      }
+    },
+    async createUser(inputArgs: any) {
+      try {
+        const { email, provider, verificationStatus, firstname, lastname, gender, profilePictureMediaId, signUpIpv4Address } = inputArgs;
+        const _userId = generateAlphaNumericId(32);
+        const _username = (firstname + lastname + '_' + generateAlphaNumericId(8)).replace(/\s+/g, '');
+
+        const _userData: IUser = {
+          userId: _userId,
+          email,
+          provider,
+          verificationStatus,
+          username: _username,
+          firstname,
+          lastname,
+          gender,
+          profilePictureMediaId,
+          signUpIpv4Address,
+          moderationStatus: 'unmoderated',
+          deletionStatus: 'notdeleted',
+          publicTags: [],
+          internalTags: [],
+          profileLink: null,
+          profileRejectionReasons: [],
+          createdAt: getCurrentEpochTimestamp(),
+          updatedAt: getCurrentEpochTimestamp(),
         };
-        if (_updateData.username && !isUsernameUnique(userId, _updateData.username))
-          return generateResponse(
-            true,
-            'Username already exists. Please try with different username',
-            400,
-            'usernameAlreadyExists',
-            null
-          );
-        const userIndex = usersData.findIndex(user => user.userId === userId);
-        if (userIndex === -1)
-          return generateResponse(
-            true,
-            'User does not exists.',
-            404,
-            'userNotFound',
-            null
-          );
-        Object.assign(usersData[userIndex], _updateData);
-        return generateResponse(
-          false,
-          'User updated successfully',
-          200,
-          '',
-          null
-        );
+
+        const dbClient = getMongoDBClient();
+        const _collectionName = process.env.UsersCollection;
+
+        try {
+          await dbClient.collection(_collectionName).insertOne({ ..._userData });
+        } catch (err) {
+          if (err.code === 11000) {
+            const field = Object.keys(err.keyPattern)[0];
+            return generateResponse(true, `${field} already exists`, `${field}AlreadyExists`, 400, null);
+          } else {
+            throw err;
+          }
+        }
+
+        return generateResponse(false, 'User created successfully', '', 200, 'done');
       } catch (error) {
-        throw (error)
+        throw error;
       }
     },
-    async deleteUser(userId: string) {
+    //******* authorization required *********//
+    async logout(userId: string, currentUserId: any, authorization: string) {
       try {
-        const userIndex = usersData.findIndex(user => user.userId === userId);
-        if (userIndex === -1)
-          return generateResponse(
-            true,
-            'User does not exists.',
-            404,
-            'userNotFound',
-            null
-          );
-        usersData.splice(userIndex, 1);
-        return generateResponse(
-          false,
-          'User deleted successfully',
-          200,
-          '',
-          null
-        );
+        if (userId != currentUserId) {
+          return generateResponse(true, 'Invalid logout action', 'invalidUser', 403, null);
+        }
+
+        const user = await getUserInformationByUserId(userId);
+        if (!user) {
+          return generateResponse(true, 'Something went wrong. Please try again', 'invalidUser', 403, null);
+        }
+
+        await AuthUtil().deleteParticularTokenByUserId(userId, authorization);
+        return generateResponse(false, 'User has been logged out successfully', '', 200, { userId });
       } catch (error) {
-        throw (error)
+        throw error;
       }
     },
-    async getUserById(userId: string) {
-      try {
-        const user: IUser = usersData.find(user => user.userId === userId);
-        if (!user)
-          return generateResponse(
-            true,
-            'User does not exists.',
-            404,
-            'userNotFound',
-            null
-          );
-        return generateResponse(
-          false,
-          'User fetched successfully',
-          200,
-          '',
-          user
-        );
-      } catch (error) {
-        throw (error)
-      }
-    },
-    async getUserByUsername(username: string) {
-      try {
-        const user: IUser = usersData.find(user => user.username === username);
-        if (!user)
-          return generateResponse(
-            true,
-            'User does not exists.',
-            404,
-            'userNotFound',
-            null
-          );
-        return generateResponse(
-          false,
-          'User fetched successfully',
-          200,
-          '',
-          user
-        );
-      } catch (error) {
-        throw (error)
-      }
-    },
-  }
-}
+  };
+};
