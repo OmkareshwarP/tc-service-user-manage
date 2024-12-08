@@ -1,4 +1,4 @@
-import { getNeo4jDriver, getNeo4jSession } from "../database/neo4jUtil.js";
+import { getNeo4jDriver, getNeo4jSession } from '../database/neo4jUtil.js';
 
 const closeNeo4jConnection = async () => {
   const neo4jDriver = getNeo4jDriver();
@@ -16,7 +16,7 @@ export const runNeo4jQuery = async (query: string) => {
     const result = await session.run(query);
     return result;
   } catch (err) {
-    throw (err)
+    throw err;
   } finally {
     await closeNeo4jConnection();
   }

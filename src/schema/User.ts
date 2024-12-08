@@ -1,4 +1,4 @@
-import { objectType } from "nexus";
+import { objectType } from 'nexus';
 
 export const UserData = objectType({
   name: 'UserData',
@@ -8,14 +8,14 @@ export const UserData = objectType({
     t.nonNull.string('firstName');
     t.nonNull.string('lastName');
     t.nonNull.string('fullName');
-  }
+  },
 });
 
 export const CreateUserData = objectType({
   name: 'CreateUserData',
   definition(t) {
     t.nonNull.string('userId');
-  }
+  },
 });
 
 export const CreateUserResponse = objectType({
@@ -26,7 +26,7 @@ export const CreateUserResponse = objectType({
     t.nonNull.int('statusCode');
     t.nonNull.string('errorCodeForClient');
     t.nullable.field('data', { type: 'CreateUserData' });
-  }
+  },
 });
 
 export const GetAllUsersResponse = objectType({
@@ -37,7 +37,7 @@ export const GetAllUsersResponse = objectType({
     t.nonNull.int('statusCode');
     t.nonNull.string('errorCodeForClient');
     t.nullable.list.nonNull.field('data', { type: 'UserData' });
-  }
+  },
 });
 
 export const GetUserByIdResponse = objectType({
@@ -48,7 +48,7 @@ export const GetUserByIdResponse = objectType({
     t.nonNull.int('statusCode');
     t.nonNull.string('errorCodeForClient');
     t.nullable.field('data', { type: 'UserData' });
-  }
+  },
 });
 
 export const GetUserByUsernameResponse = objectType({
@@ -59,5 +59,5 @@ export const GetUserByUsernameResponse = objectType({
     t.nonNull.int('statusCode');
     t.nonNull.string('errorCodeForClient');
     t.nullable.field('data', { type: 'UserData' });
-  }
+  },
 });

@@ -7,21 +7,15 @@ interface ResponseData {
   data: any;
 }
 
-const generateResponse = (
-  error: boolean,
-  message: string,
-  statusCode: number,
-  errorCodeForClient: string,
-  data: any
-) => {
+const generateResponse = (error: boolean, message: string, errorCodeForClient: string, statusCode: number, data: any) => {
   const responseData: ResponseData = {
     error,
     message,
-    statusCode,
     errorCodeForClient,
-    data
+    statusCode,
+    data,
   };
-
   return responseData;
 };
+
 export { generateResponse };

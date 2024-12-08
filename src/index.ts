@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { ApolloServer } from '@apollo/server';
 import { GraphQLError } from 'graphql';
 import express from 'express';
@@ -5,11 +6,7 @@ import { makeSchema } from 'nexus';
 import * as dotenv from 'dotenv';
 import path from 'path';
 import * as types from './schema/index.js';
-import {
-  logError,
-  getDirname,
-  logData,
-} from './utils/index.js';
+import { logError, getDirname, logData } from './utils/index.js';
 import { UserAPI } from './datasources/index.js';
 import { expressMiddleware } from '@apollo/server/express4';
 import cors from 'cors';
@@ -22,7 +19,7 @@ import { initializeCassandraDBClient } from './database/astraUtil.js';
 dotenv.config({ path: '.env' });
 
 if (process.env.SM) {
-  process.env = { ...process.env, ...JSON.parse(process.env.SM) }
+  process.env = { ...process.env, ...JSON.parse(process.env.SM) };
 }
 
 initializeRedis();
@@ -30,7 +27,6 @@ initializeMongoDB();
 initializeNeo4j();
 initializeCassandraDBClient();
 
-//  __dirname returns the absolute path, whereas the getDirname function in the given code returns the directory name relative to the current working directory
 const __dirname = getDirname(import.meta.url);
 
 const schema = makeSchema({
@@ -39,69 +35,77 @@ const schema = makeSchema({
     modules: [
       {
         module: path.join(__dirname, 'typeDefs.ts'),
-        alias: 't'
-      }
-    ]
+        alias: 't',
+      },
+    ],
   },
   contextType: {
     module: path.join(__dirname, 'context.ts'),
-    export: 'Context'
-  }
+    export: 'Context',
+  },
 });
 
 const port = process.env.PORT;
 const GQL_INTROSPECTION_KEY = process.env.GQL_INTROSPECTION_KEY;
 
 const startServer = async () => {
-  // Initialize an Express app
   const app = express();
   const httpServer = http.createServer(app);
 
   const server = new ApolloServer({
     schema,
     introspection: process.env.introspection === 'true',
-    includeStacktraceInErrorResponses:
-      process.env.includeStacktraceInErrorResponses === 'true',
+    includeStacktraceInErrorResponses: process.env.includeStacktraceInErrorResponses === 'true',
+    formatError: (error) => {
+      // Remove sensitive information from error object
+      const { locations, path, ...otherErrorFields } = error;
+
+      // Return the modified error object
+      return otherErrorFields;
+    },
     plugins: [
       {
         async requestDidStart(requestContext) {
           // Within this returned object, define functions that respond
           // to request-specific lifecycle events.
           return {
-            async willSendResponse({ response, errors }) {
+            async willSendResponse({ response, errors, request }) {
               for (const error of errors || []) {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                logError(error.message, 'GraphQLError', 5, error, { response: response?.body?.singleResult?.data })
+                if (error.extensions.code == 'UNAUTHENTICATED' || error.extensions.validationErrorCode === 'INTROSPECTION_DISABLED') {
+                  // @ts-ignore
+                  response.data = undefined;
+                  // @ts-ignore
+                  response.body.singleResult.data = {};
+                  response.http.status = 401;
+                } else {
+                  // @ts-ignore
+                  logError(error.message, 'GraphQLError', 5, error, { response: response?.body?.singleResult?.data, request: request });
+                }
               }
-            }
+            },
           };
         },
       },
     ],
   });
 
-  // Ensure we wait for our server to start
   await server.start();
 
-  // CORS configuration
   const corsOptions = {
-    origin: '*',  // Allow all origins
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: '*',
-    maxAge: 300,  // Cache preflight response for 5 minutes
+    maxAge: 300, //seconds
     exposedHeaders: '*',
     credentials: false,
   };
 
-  app.use('/',
+  app.use(
+    '/',
     cors<cors.CorsRequest>(corsOptions),
     express.json(),
-    // expressMiddleware accepts the same arguments:
-    // an Apollo Server instance and optional configuration options
     expressMiddleware(server, {
       context: async ({ req }) => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
         const isIntroSpectionQuery = req.body.operationName === 'IntrospectionQuery';
         if (isIntroSpectionQuery) {
@@ -117,41 +121,27 @@ const startServer = async () => {
         }
         return {
           dataSources: {
-            UserAPI
+            UserAPI,
           },
+          req,
         };
       },
-
-    }),
+    })
   );
-  // Modified server startup
-  await new Promise<void>((resolve) =>
-    httpServer.listen({ port: parseInt(port) }, resolve),
-  );
-  logData(`🚀 Server listening at http://localhost:${port}`, 'serverStarted', 2, '')
-}
+  await new Promise<void>((resolve) => httpServer.listen({ port: parseInt(port) }, resolve));
+  logData(`🚀 Server listening at http://localhost:${port}`, 'serverStarted', 2, '');
+};
 
 startServer().catch((err) => {
   logError(err.message, 'startServerError', 5, err);
-})
-
+});
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 process.on('unhandledRejection', (reason: any) => {
-  logError(
-    'unhandledRejection',
-    'unhandledRejection',
-    9,
-    reason
-  );
+  logError('unhandledRejection', 'unhandledRejection', 9, reason);
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 process.on('uncaughtException', (reason: any) => {
-  logError(
-    'unhandledException',
-    'unhandledException',
-    9,
-    reason
-  );
+  logError('unhandledException', 'unhandledException', 9, reason);
 });
