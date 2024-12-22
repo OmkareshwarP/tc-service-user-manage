@@ -22,16 +22,10 @@ interface LogData {
 }
 
 const logger = pino({
-  level: 'info'
+  level: 'info',
 });
 
-const logError = (
-  errorMessage: string,
-  errorCodeForClient: string,
-  errorLevel: number,
-  error: any,
-  inputParams?: any
-) => {
+const logError = (errorMessage: string, errorCodeForClient: string, errorLevel: number, error: any, inputParams?: any) => {
   const timeStamp = getCurrentTime();
   const errorOrigin: string = process.env.SERVICE_NAME;
   const loggerData: LogErrorData = {
@@ -41,17 +35,12 @@ const logError = (
     errorOrigin,
     errorLevel,
     errorStack: error.stack,
-    inputParams
+    inputParams,
   };
   logger.error(loggerData);
 };
 
-const logData = (
-  logMessage: string,
-  logCodeForServer: string,
-  logLevel: number,
-  logData: any
-) => {
+const logData = (logMessage: string, logCodeForServer: string, logLevel: number, logData: any) => {
   const timeStamp = getCurrentTime();
   const logOrigin: string = process.env.SERVICE_NAME;
   const loggerData: LogData = {
@@ -60,7 +49,7 @@ const logData = (
     logCodeForServer,
     logOrigin,
     logLevel,
-    logData
+    logData,
   };
   logger.info(loggerData);
 };

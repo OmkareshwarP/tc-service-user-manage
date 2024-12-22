@@ -1,7 +1,6 @@
-import { IUser } from "../typeDefs.js";
+export const signInProviders: string[] = ['googleSignIn', 'emailPassword'];
 
-export const usersData: IUser[] = []
-
-export const isUsernameUnique = (userId: string, username: string): boolean => {
-  return !usersData.some(user => user.username === username && user.userId !== userId);
-}
+export const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
