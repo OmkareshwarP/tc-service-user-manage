@@ -1,4 +1,4 @@
-export const signInProviders: string[] = ['googleSignIn', 'emailPassword'];
+export const signInProviders: string[] = ['google.com', 'password'];
 
 export const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

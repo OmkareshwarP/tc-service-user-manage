@@ -167,5 +167,29 @@ export const UserAPI = () => {
         throw error;
       }
     },
+    async getBasicUserInfo(userId: string) {
+      try {
+        const user = await getUserInformationByUserId(userId);
+        if (!user) {
+          return generateResponse(true, 'Something went wrong. Please try again', 'userNotFound', 404, null);
+        }
+        return generateResponse(false, 'User data fetched successfully', '', 200, user);
+      } catch (error) {
+        throw error;
+      }
+    },
+    async getBasicUserInfoByUsername(username: string) {
+      try {
+        const dbClient = getMongoDBClient();
+        const _collectionName = process.env.UsersCollection;
+        const userData = (await dbClient.collection(_collectionName).findOne({ username: { $regex: new RegExp(`^${username}$`, 'i') }, deletionStatus: 'notdeleted' })) as any;
+        if (!userData?.userId) {
+          return generateResponse(true, 'Something went wrong. Please try again', 'userNotFound', 404, null);
+        }
+        return generateResponse(false, 'User data fetched successfully', '', 200, userData);
+      } catch (error) {
+        throw error;
+      }
+    },
   };
 };
