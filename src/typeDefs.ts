@@ -10,9 +10,7 @@ export interface IUser {
   email: string;
   username: string;
   provider: string;
-  firstname: string;
-  lastname: string;
-  gender: string;
+  name: string;
   profilePictureMediaId: string;
   moderationStatus: string;
   verificationStatus: string;
