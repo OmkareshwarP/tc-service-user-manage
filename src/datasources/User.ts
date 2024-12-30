@@ -105,19 +105,16 @@ export const UserAPI = () => {
     },
     async createUser(inputArgs: any) {
       try {
-        const { email, provider, verificationStatus, firstname, lastname, gender, profilePictureMediaId, signUpIpv4Address } = inputArgs;
+        const { email, provider, verificationStatus, name, username, profilePictureMediaId, signUpIpv4Address } = inputArgs;
         const _userId = generateAlphaNumericId(32);
-        const _username = (firstname + lastname + '_' + generateAlphaNumericId(8)).replace(/\s+/g, '');
 
         const _userData: IUser = {
           userId: _userId,
           email,
           provider,
           verificationStatus,
-          username: _username,
-          firstname,
-          lastname,
-          gender,
+          name,
+          username,
           profilePictureMediaId,
           signUpIpv4Address,
           moderationStatus: 'unmoderated',
@@ -167,18 +164,18 @@ export const UserAPI = () => {
         throw error;
       }
     },
-    async getBasicUserInfo(userId: string) {
+    async getUserAuthInfo(userId: string) {
       try {
         const user = await getUserInformationByUserId(userId);
         if (!user) {
           return generateResponse(true, 'Something went wrong. Please try again', 'userNotFound', 404, null);
         }
-        return generateResponse(false, 'User data fetched successfully', '', 200, user);
+        return generateResponse(false, 'User auth info fetched successfully', '', 200, user);
       } catch (error) {
         throw error;
       }
     },
-    async getBasicUserInfoByUsername(username: string) {
+    async getUserInfoByUsername(username: string) {
       try {
         const dbClient = getMongoDBClient();
         const _collectionName = process.env.UsersCollection;
@@ -187,6 +184,20 @@ export const UserAPI = () => {
           return generateResponse(true, 'Something went wrong. Please try again', 'userNotFound', 404, null);
         }
         return generateResponse(false, 'User data fetched successfully', '', 200, userData);
+      } catch (error) {
+        throw error;
+      }
+    },
+    async checkUsernameStatus(username: string) {
+      try {
+        const dbClient = getMongoDBClient();
+        const _collectionName = process.env.UsersCollection;
+        const userData = (await dbClient.collection(_collectionName).findOne({ username: { $regex: new RegExp(`^${username}$`, 'i') } })) as any;
+        let isUsernameAvailable = false;
+        if (!userData?.username) {
+          isUsernameAvailable = true;
+        }
+        return generateResponse(false, 'User data fetched successfully', '', 200, { isUsernameAvailable });
       } catch (error) {
         throw error;
       }

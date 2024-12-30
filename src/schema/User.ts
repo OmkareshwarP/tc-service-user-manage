@@ -1,13 +1,39 @@
 import { objectType } from 'nexus';
 
+export const UserAuthInfo = objectType({
+  name: 'UserAuthInfo',
+  definition(t) {
+    t.nonNull.string('userId');
+    t.nonNull.string('email');
+    t.nonNull.string('username');
+    t.nonNull.string('name');
+    t.nullable.string('profilePictureMediaId');
+  },
+});
+
+export const GetUserAuthInfoResponse = objectType({
+  name: 'GetUserAuthInfoResponse',
+  definition(t) {
+    t.nonNull.boolean('error');
+    t.nonNull.string('message');
+    t.nonNull.int('statusCode');
+    t.nonNull.string('errorCodeForClient');
+    t.nullable.field('data', { type: 'UserAuthInfo' });
+  },
+});
+
 export const UserData = objectType({
   name: 'UserData',
   definition(t) {
     t.nonNull.string('userId');
     t.nonNull.string('username');
-    t.nonNull.string('firstname');
-    t.nonNull.string('lastname');
-    t.nonNull.string('fullname');
+    t.nonNull.string('name');
+    t.nullable.string('profilePictureMediaId');
+    t.nullable.string('bio');
+    t.nullable.string('location');
+    t.nullable.string('website');
+    t.nullable.string('dob');
+    t.nonNull.string('createdAt');
   },
 });
 
@@ -40,8 +66,8 @@ export const GetAllUsersResponse = objectType({
   },
 });
 
-export const GetUserByIdResponse = objectType({
-  name: 'GetUserByIdResponse',
+export const GetUserInfoResponse = objectType({
+  name: 'GetUserInfoResponse',
   definition(t) {
     t.nonNull.boolean('error');
     t.nonNull.string('message');
@@ -51,8 +77,8 @@ export const GetUserByIdResponse = objectType({
   },
 });
 
-export const GetUserByUsernameResponse = objectType({
-  name: 'GetUserByUsernameResponse',
+export const GetUserInfoByUsernameResponse = objectType({
+  name: 'GetUserInfoByUsernameResponse',
   definition(t) {
     t.nonNull.boolean('error');
     t.nonNull.string('message');
@@ -62,36 +88,20 @@ export const GetUserByUsernameResponse = objectType({
   },
 });
 
-export const BasicUserInfo = objectType({
-  name: 'BasicUserInfo',
+export const UsernameStatus = objectType({
+  name: 'UsernameStatus',
   definition(t) {
-    t.nonNull.string('userId');
-    t.nonNull.string('email');
-    t.nonNull.string('username');
-    t.nonNull.string('firstname');
-    t.nonNull.string('lastname');
-    t.nullable.string('profilePictureMediaId');
+    t.nonNull.boolean('isUsernameAvailable');
   },
 });
 
-export const GetBasicUserInfoResponse = objectType({
-  name: 'GetBasicUserInfoResponse',
+export const CheckUsernameStatusResponse = objectType({
+  name: 'CheckUsernameStatusResponse',
   definition(t) {
     t.nonNull.boolean('error');
     t.nonNull.string('message');
     t.nonNull.int('statusCode');
     t.nonNull.string('errorCodeForClient');
-    t.nullable.field('data', { type: 'BasicUserInfo' });
-  },
-});
-
-export const GetBasicUserInfoByUsernameResponse = objectType({
-  name: 'GetBasicUserInfoByUsernameResponse',
-  definition(t) {
-    t.nonNull.boolean('error');
-    t.nonNull.string('message');
-    t.nonNull.int('statusCode');
-    t.nonNull.string('errorCodeForClient');
-    t.nullable.field('data', { type: 'BasicUserInfo' });
+    t.nullable.field('data', { type: 'UsernameStatus' });
   },
 });
