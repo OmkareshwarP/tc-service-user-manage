@@ -20,7 +20,7 @@ export const sendBrevoMailAPI = async (mailOptions: IBrevoMailOptions) => {
       },
     });
     const redisClient = getRedisClient();
-    await redisClient.incr(`${process.env.REDIS_KEY_BrevoGlobalEmailCount}:${getCurrentISODate_YYYYMMDD()}`);
+    await redisClient.incr(`${process.env.REDIS_KEY_BREVO_GLOBAL_EMAIL_COUNT}:${getCurrentISODate_YYYYMMDD()}`);
   } catch (error) {
     logError(error.message, 'sendBrevoMailAPIError', 5, error, { receiverEmail: mailOptions.receiverEmail, subject: mailOptions.subject });
     throw error;
@@ -29,7 +29,7 @@ export const sendBrevoMailAPI = async (mailOptions: IBrevoMailOptions) => {
 
 export const isBrevoEmailOTPEnabled = async (): Promise<boolean> => {
   const redisClient = getRedisClient();
-  const redisKey = `${process.env.REDIS_KEY_BrevoGlobalEmailCount}:${getCurrentISODate_YYYYMMDD()}`;
+  const redisKey = `${process.env.REDIS_KEY_BREVO_GLOBAL_EMAIL_COUNT}:${getCurrentISODate_YYYYMMDD()}`;
 
   const emailCount = (await redisClient.get(redisKey)) || '0';
 

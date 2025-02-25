@@ -25,7 +25,7 @@ const AuthUtil = (): Authentication => {
       try {
         const { userId, userIdentifier, provider, deviceInfo, operatingSystem, userAccessLevel } = userInputData;
         const token = generateAlphaNumericId(20);
-        const redisKey = `${process.env.REDIS_KEY_AuthToken}:${token}`;
+        const redisKey = `${process.env.RK_AUTHTOKEN}:${token}`;
         const userMapObj: Record<string, any> = {
           userId: userId,
           token,
@@ -37,7 +37,7 @@ const AuthUtil = (): Authentication => {
           createdAt: getCurrentEpochTimestamp(),
           lastModifiedAt: getCurrentEpochTimestamp(),
         };
-        const redisTokenListKey = `${process.env.REDIS_KEY_UserTokensList}:${userId}`;
+        const redisTokenListKey = `${process.env.RK_USER_TOKENS_LIST}:${userId}`;
         const redisClient = getRedisClient();
         await redisClient.multi().hSet(redisKey, userMapObj).lPush(redisTokenListKey, token).exec();
         return token;
@@ -47,7 +47,7 @@ const AuthUtil = (): Authentication => {
     },
     async verifyToken(token: string) {
       try {
-        const redisKey = `${process.env.REDIS_KEY_AuthToken}:${token}`;
+        const redisKey = `${process.env.RK_AUTHTOKEN}:${token}`;
         const redisClient = getRedisClient();
         const userData = await redisClient.hGetAll(redisKey);
         if (Object.keys(userData).length) {
@@ -66,10 +66,10 @@ const AuthUtil = (): Authentication => {
     },
     async deleteAllTokensByUserId(userId: string) {
       try {
-        const redisKey = `${process.env.REDIS_KEY_UserTokensList}:${userId}`;
+        const redisKey = `${process.env.RK_USER_TOKENS_LIST}:${userId}`;
         const redisClient = getRedisClient();
         const tokens = await redisClient.lRange(redisKey, 0, -1);
-        const keysToDelete = [...tokens.map((token) => `${process.env.REDIS_KEY_AuthToken}:${token}`), redisKey];
+        const keysToDelete = [...tokens.map((token) => `${process.env.RK_AUTHTOKEN}:${token}`), redisKey];
         await redisClient.multi().del(keysToDelete).exec();
       } catch (err) {
         throw err;
@@ -77,8 +77,8 @@ const AuthUtil = (): Authentication => {
     },
     async deleteParticularTokenByUserId(userId: string, token: string) {
       try {
-        const redisKey = `${process.env.REDIS_KEY_UserTokensList}:${userId}`;
-        const authTokenRedisKey = `${process.env.REDIS_KEY_AuthToken}:${token}`;
+        const redisKey = `${process.env.RK_USER_TOKENS_LIST}:${userId}`;
+        const authTokenRedisKey = `${process.env.RK_AUTHTOKEN}:${token}`;
         const redisClient = getRedisClient();
         await redisClient.multi().lRem(redisKey, 0, token).del(authTokenRedisKey).exec();
       } catch (err) {

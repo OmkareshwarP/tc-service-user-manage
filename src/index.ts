@@ -15,12 +15,13 @@ import { initializeMongoDB } from './database/mongoUtil.js';
 import { initializeRedis } from './database/redisUtil.js';
 import { initializeNeo4j } from './database/neo4jUtil.js';
 import { initializeCassandraDBClient } from './database/astraUtil.js';
+import { loadEnv } from './utils/dopplerUtil.js';
 
-dotenv.config({ path: '.env' });
+dotenv.config({ path: path.resolve('.env') });
 
-if (process.env.SM) {
-  process.env = { ...process.env, ...JSON.parse(process.env.SM) };
-}
+await loadEnv();
+
+const PORT = process.env.PORT || 4000;
 
 initializeRedis();
 initializeMongoDB();
@@ -45,7 +46,6 @@ const schema = makeSchema({
   },
 });
 
-const port = process.env.PORT;
 const GQL_INTROSPECTION_KEY = process.env.GQL_INTROSPECTION_KEY;
 
 const startServer = async () => {
@@ -54,8 +54,8 @@ const startServer = async () => {
 
   const server = new ApolloServer({
     schema,
-    introspection: process.env.introspection === 'true',
-    includeStacktraceInErrorResponses: process.env.includeStacktraceInErrorResponses === 'true',
+    introspection: process.env.INTROSPECTION === 'true',
+    includeStacktraceInErrorResponses: process.env.INCLUDE_STACK_TRACE_IN_ERROR_RESPONSES === 'true',
     formatError: (error) => {
       // Remove sensitive information from error object
       const { locations, path, ...otherErrorFields } = error;
@@ -128,8 +128,8 @@ const startServer = async () => {
       },
     })
   );
-  await new Promise<void>((resolve) => httpServer.listen({ port: parseInt(port) }, resolve));
-  logData(`🚀 Server listening at http://localhost:${port}`, 'serverStarted', 2, '');
+  await new Promise<void>((resolve) => httpServer.listen({ port: PORT }, resolve));
+  logData(`🚀 Server listening at http://localhost:${PORT}`, 'serverStarted', 2, '');
 };
 
 startServer().catch((err) => {

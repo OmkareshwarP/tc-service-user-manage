@@ -9,7 +9,7 @@ export const getUserInformationByUserId = async (userId: string): Promise<any> =
       return null;
     }
     let userData: any;
-    const redisKey = `${process.env.REDIS_KEY_UserInfo}:${userId}`;
+    const redisKey = `${process.env.RK_USER_INFO}:${userId}`;
     const redisUser = await getKey(redisKey);
     userData = JSON.parse(redisUser);
     if (userData?._key) {
@@ -18,7 +18,7 @@ export const getUserInformationByUserId = async (userId: string): Promise<any> =
     }
     if (!userData || Object.keys(userData).length === 0) {
       const dbClient = getMongoDBClient();
-      const _collectionName = process.env.UsersCollection;
+      const _collectionName = process.env.USERS_COLLECTION;
       userData = (await dbClient.collection(_collectionName).findOne({ userId, deletionStatus: 'notdeleted' })) as any;
       if (userData) {
         saveUserInformationByUserId(userData, userId);
@@ -33,7 +33,7 @@ export const getUserInformationByUserId = async (userId: string): Promise<any> =
 
 export const saveUserInformationByUserId = async (userData: any, userId: string) => {
   try {
-    const redisKey = `${process.env.REDIS_KEY_UserInfo}:${userId}`;
+    const redisKey = `${process.env.RK_USER_INFO}:${userId}`;
     const expireTime = 15 * 24 * 60 * 60;
     const redisClient = getRedisClient();
     await redisClient.multi().set(redisKey, JSON.stringify(userData)).expire(redisKey, expireTime).exec();
@@ -46,7 +46,7 @@ export const saveUserInformationByUserId = async (userData: any, userId: string)
 
 export const deleteUserInformationByUserId = async (userId: string) => {
   try {
-    const redisKey = `${process.env.REDIS_KEY_UserInfo}:${userId}`;
+    const redisKey = `${process.env.RK_USER_INFO}:${userId}`;
     const redisClient = getRedisClient();
     await redisClient.del(redisKey);
   } catch (err) {
