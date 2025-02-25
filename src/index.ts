@@ -15,21 +15,15 @@ import { initializeMongoDB } from './database/mongoUtil.js';
 import { initializeRedis } from './database/redisUtil.js';
 import { initializeNeo4j } from './database/neo4jUtil.js';
 import { initializeCassandraDBClient } from './database/astraUtil.js';
-import { loadEnv } from './utils/dopplerUtil.js';
 
 dotenv.config({ path: path.resolve('.env') });
 
 let count = 0;
 
 const startServer = async () => {
-  if (count > 0) {
-    logError('server start count error', 'startServerCountError', 5, count);
-    return;
-  }
+  count++;
 
-  count++
-
-  await loadEnv();
+  logData(`count:: ` + count, 'serverStartedExecuted', 2, 'count');
 
   const PORT = process.env.PORT || 4000;
 
