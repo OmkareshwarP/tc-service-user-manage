@@ -2,7 +2,7 @@ name: Deploy to Vercel
 
 on:
   push:
-    branches: [development, prod]
+    branches: [development]
 
 jobs:
   deploy:

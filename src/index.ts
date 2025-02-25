@@ -15,43 +15,40 @@ import { initializeMongoDB } from './database/mongoUtil.js';
 import { initializeRedis } from './database/redisUtil.js';
 import { initializeNeo4j } from './database/neo4jUtil.js';
 import { initializeCassandraDBClient } from './database/astraUtil.js';
+import { loadEnv } from './utils/dopplerUtil.js';
 
 dotenv.config({ path: path.resolve('.env') });
 
-let count = 0;
+await loadEnv();
+
+const PORT = process.env.PORT || 4000;
+
+initializeRedis();
+initializeMongoDB();
+initializeNeo4j();
+initializeCassandraDBClient();
+
+const __dirname = getDirname(import.meta.url);
+
+const schema = makeSchema({
+  types,
+  sourceTypes: {
+    modules: [
+      {
+        module: path.join(__dirname, 'typeDefs.ts'),
+        alias: 't',
+      },
+    ],
+  },
+  contextType: {
+    module: path.join(__dirname, 'context.ts'),
+    export: 'Context',
+  },
+});
+
+const GQL_INTROSPECTION_KEY = process.env.GQL_INTROSPECTION_KEY;
 
 const startServer = async () => {
-  count++;
-
-  logData(`count:: ` + count, 'serverStartedExecuted', 2, 'count');
-
-  const PORT = process.env.PORT || 4000;
-
-  initializeRedis();
-  initializeMongoDB();
-  initializeNeo4j();
-  initializeCassandraDBClient();
-
-  const __dirname = getDirname(import.meta.url);
-
-  const schema = makeSchema({
-    types,
-    sourceTypes: {
-      modules: [
-        {
-          module: path.join(__dirname, 'typeDefs.ts'),
-          alias: 't',
-        },
-      ],
-    },
-    contextType: {
-      module: path.join(__dirname, 'context.ts'),
-      export: 'Context',
-    },
-  });
-
-  const GQL_INTROSPECTION_KEY = process.env.GQL_INTROSPECTION_KEY;
-
   const app = express();
   const httpServer = http.createServer(app);
 
