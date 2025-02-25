@@ -1,6 +1,9 @@
 {
   "name": "tc-service-user-manage",
   "version": "1.0.0",
+  "engines": {
+    "node": "22"
+  },
   "description": "This project contains all the user-related APIs for Tweeter Club ",
   "main": "index.js",
   "repository": "git@github.com:OmkareshwarP/tc-service-user-manage.git",
