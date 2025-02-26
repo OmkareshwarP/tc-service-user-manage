@@ -6,11 +6,23 @@ import { makeSchema } from 'nexus';
 import * as dotenv from 'dotenv';
 import path from 'path';
 import * as types from './schema/index.js';
-import { getDirname, loadEnv, logData, logError } from './utils/index.js';
+import { getDirname, gracefulShutdown, initializeAbly, initializeFirebaseApp, initializeSentry, loadEnv, logData, logError } from './utils/index.js';
+import { initializeRedis } from './database/redisUtil.js';
+import { initializeMongoDB } from './database/mongoUtil.js';
+import { initializeNeo4j } from './database/neo4jUtil.js';
+import { initializeAstraDB } from './database/astraUtil.js';
 
 dotenv.config({ path: path.resolve('.env') });
 
 await loadEnv();
+
+initializeSentry();
+await initializeFirebaseApp();
+initializeRedis();
+initializeMongoDB();
+await initializeNeo4j();
+await initializeAstraDB();
+initializeAbly();
 
 const __dirname = getDirname(import.meta.url);
 
@@ -103,4 +115,16 @@ process.on('unhandledRejection', (reason: any) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 process.on('uncaughtException', (reason: any) => {
   logError('uncaughtException', 'uncaughtException', 9, reason);
+});
+
+process.on('SIGINT', async () => {
+  // eslint-disable-next-line no-console
+  console.log('🛑 Received SIGINT (CTRL + C)');
+  await gracefulShutdown();
+});
+
+process.on('SIGTERM', async () => {
+  // eslint-disable-next-line no-console
+  console.log('🛑 Received SIGTERM (Docker Stop, Kill Command)');
+  await gracefulShutdown();
 });
