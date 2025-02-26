@@ -1,41 +1,30 @@
-name: Deploy to Vercel
+name: Build and Deploy to Koyeb
 
 on:
   push:
-    branches: [development]
+    branches:
+      - prod  # Change if using another branch
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    if: contains(github.ref, 'refs/heads/prod')
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "22" # Specify the Node.js version to use
+        uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: npm install
-        
-      - name: Build project
-        run: npm run build
-      
-      - name: Setup Environment variables (Prod)
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Set environment variables
+        run: echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Build Docker image with specific tag
         run: |
-          echo "NODE_ENV=${{ env.BRANCH_NAME }}" >> $GITHUB_ENV
-          echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID_PROD }}" >> $GITHUB_ENV
-          echo "VERCEL_ORG_ID=${{ secrets.VERCEL_ORG_ID_PROD }}" >> $GITHUB_ENV
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/tc-service-user-manage:${{ env.IMAGE_TAG }} .
+          docker tag ${{ secrets.DOCKER_USERNAME }}/tc-service-user-manage:${{ env.IMAGE_TAG }} ${{ secrets.DOCKER_USERNAME }}/tc-service-user-manage:latest
 
-      - name: Deploy to Vercel (Prod)
-        if: ${{ github.ref == 'refs/heads/prod' }}
-        uses: amondnet/vercel-action@v20
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_PROD }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID_PROD }}
-          vercel-args: "--prod"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Push Docker images to Docker Hub
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/tc-service-user-manage:${{ env.IMAGE_TAG }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/tc-service-user-manage:latest
