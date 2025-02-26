@@ -28,3 +28,16 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/tc-service-user-manage:${{ env.IMAGE_TAG }}
           docker push ${{ secrets.DOCKER_USERNAME }}/tc-service-user-manage:latest
+
+      - name: Deploy to Koyeb
+        run: |
+          curl -X PATCH "https://app.koyeb.com/v1/services/${{ secrets.KOYEB_SERVICE_ID }}" \
+            -H "Authorization: Bearer ${{ secrets.KOYEB_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "definition": {
+                "type": "DOCKER",
+                "image": "${{ secrets.DOCKER_USERNAME }}/tc-service-user-manage:latest",
+                "env": []
+              }
+            }'
