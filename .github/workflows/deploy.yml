@@ -37,7 +37,10 @@ jobs:
             -d '{
               "definition": {
                 "type": "DOCKER",
+                "name": "tc-service-user-manage",
                 "image": "${{ secrets.DOCKER_USERNAME }}/tc-service-user-manage:latest",
+                "regions": ${{ secrets.KOYEB_SERVICE_REGION }},
+                "scalings": ${{ secrets.KOYEB_SERVICE_SCALINGS }},
                 "env": []
               }
             }'
