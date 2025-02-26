@@ -42,6 +42,6 @@ jobs:
                 "regions": ${{ secrets.KOYEB_SERVICE_REGION }},
                 "scalings": ${{ secrets.KOYEB_SERVICE_SCALINGS }},
                 "instance_types": ${{ secrets.KOYEB_SERVICE_INSTANCE_TYPES }}, 
-                "env": []
+                "type": "WEB",
               }
             }'
