@@ -28,3 +28,14 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/tc-service-user-manage:${{ env.IMAGE_TAG }}
           docker push ${{ secrets.DOCKER_USERNAME }}/tc-service-user-manage:latest
+
+      - name: Deploy to Koyeb
+        run: |
+          echo "Deploying to Koyeb..."
+          SERVICE_JSON=$(curl -# -X PATCH "https://app.koyeb.com/v1/services/${{ secrets.KOYEB_SERVICE_ID }}" \
+            -H "Authorization: Bearer ${{ secrets.KOYEB_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{ "definition": ${{ secrets.KOYEB_SERVICE_DEFINITION }} }')
+
+          echo "Deployment response received. Extracting relevant details..."
+          echo "$SERVICE_JSON" | jq '{id: .service.id, created_at: .service.created_at, updated_at: .service.updated_at, started_at: .service.started_at, succeeded_at: .service.succeeded_at, paused_at: .service.paused_at, resumed_at: .service.resumed_at, terminated_at: .service.terminated_at, name: .service.name, status: .service.status, messages: .service.messages, version: .service.version}'
