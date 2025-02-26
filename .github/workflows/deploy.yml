@@ -35,13 +35,5 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.KOYEB_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{
-              "definition": {
-                "type": "DOCKER",
-                "name": "tc-service-user-manage",
-                "image": "${{ secrets.DOCKER_USERNAME }}/tc-service-user-manage:latest",
-                "regions": ${{ secrets.KOYEB_SERVICE_REGION }},
-                "scalings": ${{ secrets.KOYEB_SERVICE_SCALINGS }},
-                "instance_types": ${{ secrets.KOYEB_SERVICE_INSTANCE_TYPES }}, 
-                "type": "WEB",
-              }
+              "definition": ${{ secrets.KOYEB_SERVICE_DEFINITION }}
             }'
