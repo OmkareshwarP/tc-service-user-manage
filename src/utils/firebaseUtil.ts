@@ -6,7 +6,7 @@ import { GraphQLError } from 'graphql';
 export const initializeFirebaseApp = async () => {
   try {
     // if (!initializeApp.name) {
-    const credentials: ServiceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS as string);
+    const credentials: ServiceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_CREDENTIALS_BASE64 as string, 'base64').toString('utf-8'));
     initializeApp({
       credential: cert(credentials),
     });

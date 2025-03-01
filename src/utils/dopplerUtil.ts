@@ -15,21 +15,11 @@ const fetchDopplerSecrets = async () => {
       params: {
         project: process.env.DOPPLER_PROJECT,
         config: process.env.DOPPLER_CONFIG,
-        format: 'json',
+        format: 'env',
       },
     });
 
-    const envData = response.data;
-
-    // Convert JSON response to .env format
-    let envContent = Object.entries(envData)
-      .map(([key, value]) => {
-        if (typeof value === 'object') {
-          return `${key}='${JSON.stringify(value)}'`; // Store JSON values as properly escaped strings
-        }
-        return `${key}="${value}"`;
-      })
-      .join('\n');
+    let envContent = response.data;
 
     const serviceName = process.env.SERVICE_NAME;
     envContent += `\nSERVICE_NAME="${serviceName}"`;
