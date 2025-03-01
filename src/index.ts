@@ -11,6 +11,7 @@ import { initializeRedis } from './database/redisUtil.js';
 import { initializeMongoDB } from './database/mongoUtil.js';
 import { initializeNeo4j } from './database/neo4jUtil.js';
 import { initializeAstraDB } from './database/astraUtil.js';
+import { UserAPI } from './datasources/User.js';
 
 dotenv.config({ path: path.resolve('.env') });
 
@@ -98,7 +99,9 @@ const { url } = await startStandaloneServer(server, {
       }
     }
     return {
-      dataSources: {},
+      dataSources: {
+        UserAPI,
+      },
       req,
     };
   },

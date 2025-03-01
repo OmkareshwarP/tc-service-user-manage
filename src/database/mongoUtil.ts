@@ -3,6 +3,7 @@ import { Db as MongoDBClient, MongoClient } from 'mongodb';
 import { logData, logError } from '../utils/index.js';
 
 let mongoClient: MongoClient;
+let mongoDBClient: MongoDBClient;
 
 export const initializeMongoDB = () => {
   const _mongoUrl = process.env.MONGO_URL;
@@ -14,6 +15,7 @@ export const initializeMongoDB = () => {
   }
 
   mongoClient = new MongoClient(_mongoUrl);
+  mongoDBClient = mongoClient.db(_mongoDBName);
 
   mongoClient
     .connect()
@@ -46,6 +48,5 @@ export const initializeMongoDB = () => {
 };
 
 export const getMongoDBClient = (): MongoDBClient => {
-  const _mongoDBName = process.env.MONGO_DATABASE_NAME;
-  return mongoClient.db(_mongoDBName);
+  return mongoDBClient;
 };
