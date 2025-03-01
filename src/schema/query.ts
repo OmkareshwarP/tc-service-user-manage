@@ -1,5 +1,6 @@
-import { extendType } from 'nexus';
-import { generateResponse, logError } from '../utils/index.js';
+import { extendType, nonNull, stringArg } from 'nexus';
+import { generateResponse, isValidUsername, logError } from '../utils/index.js';
+import AuthUtil from '../auth/index.js';
 
 export const UserQueries = extendType({
   type: 'Query',
@@ -12,6 +13,43 @@ export const UserQueries = extendType({
         } catch (error) {
           logError(error.message, 'helloError', 5, error);
           return generateResponse(true, `Something went wrong. We're working on it`, 'helloError', 500, null);
+        }
+      },
+    });
+    t.field('checkUsernameStatus', {
+      type: 'CheckUsernameStatusResponse',
+      args: {
+        username: nonNull(stringArg()),
+      },
+      async resolve(_, { username }, { dataSources, req }) {
+        if (!username) {
+          return generateResponse(true, 'Something went wrong while validating your request', 'inputParamsValidationFailed', 403, null);
+        }
+
+        if (!isValidUsername(username)) {
+          return generateResponse(true, 'Username must be between 5 and 15 characters long', 'inputParamsValidationFailed', 403, null);
+        }
+
+        try {
+          const response = await dataSources.UserAPI().checkUsernameStatus(username);
+          return response;
+        } catch (error) {
+          logError(error.message, 'checkUsernameStatusError', 5, error, { args: req.body?.variables, username });
+          return generateResponse(true, `Something went wrong while getting info. We're working on it`, 'checkUsernameStatusError', 500, null);
+        }
+      },
+    });
+    t.field('getUserBasicInfo', {
+      type: 'GetUserBasicInfoResponse',
+      async resolve(root, _, { dataSources, req }) {
+        const token = req.headers.authorization;
+        const user = await AuthUtil().verifyToken(token);
+        try {
+          const response = await dataSources.UserAPI().getUserBasicInfo(user.userId);
+          return response;
+        } catch (error) {
+          logError(error.message, 'getUserBasicInfoError', 5, error, { args: req.body?.variables, userId: user.userId });
+          return generateResponse(true, `Something went wrong while getting user basic info. We're working on it`, 'getUserBasicInfoError', 500, null);
         }
       },
     });
