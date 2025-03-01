@@ -32,6 +32,8 @@ jobs:
       - name: Trigger Render Deploy Hook
         run: |
           echo "Deploying to Render..."
-          curl -# -X POST "$DEPLOY_HOOK_URL"
+          SERVICE_JSON=$(curl -# -X POST "$DEPLOY_HOOK_URL")
+          echo "Deployment response received. Extracting relevant details..."
+          echo "$SERVICE_JSON" | jq '{message: .service.message}'
         env:
           DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK }}
