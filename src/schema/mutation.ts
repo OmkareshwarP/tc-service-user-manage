@@ -89,5 +89,47 @@ export const UserMutations = extendType({
         }
       },
     });
+    t.field('followUser', {
+      type: 'GenericResponse',
+      args: {
+        followeeUserId: nonNull(stringArg()),
+      },
+      async resolve(_, { followeeUserId }, { dataSources, req }) {
+        const token = req.headers.authorization;
+        const user = await AuthUtil().verifyToken(token);
+        const followerUserId = user.userId;
+        try {
+          if (!followeeUserId) {
+            return generateResponse(true, 'Something went wrong while validating your request', 'inputParamsValidationFailed', 403, null);
+          }
+          const response = await dataSources.UserAPI().followUser(followeeUserId, followerUserId);
+          return response;
+        } catch (error) {
+          logError(error.message, 'followUserError', 5, error, { args: req.body?.variables, followeeUserId, followerUserId });
+          return generateResponse(true, `Something went wrong while following user. We're working on it`, 'followUserError', 500, null);
+        }
+      },
+    });
+    t.field('unFollowUser', {
+      type: 'GenericResponse',
+      args: {
+        followeeUserId: nonNull(stringArg()),
+      },
+      async resolve(_, { followeeUserId }, { dataSources, req }) {
+        const token = req.headers.authorization;
+        const user = await AuthUtil().verifyToken(token);
+        const followerUserId = user.userId;
+        try {
+          if (!followeeUserId) {
+            return generateResponse(true, 'Something went wrong while validating your request', 'inputParamsValidationFailed', 403, null);
+          }
+          const response = await dataSources.UserAPI().unFollowUser(followeeUserId, followerUserId);
+          return response;
+        } catch (error) {
+          logError(error.message, 'unFollowUserError', 5, error, { args: req.body?.variables, followeeUserId, followerUserId });
+          return generateResponse(true, `Something went wrong while unfollowing user. We're working on it`, 'unFollowUserError', 500, null);
+        }
+      },
+    });
   },
 });
