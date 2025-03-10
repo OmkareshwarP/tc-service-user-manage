@@ -43,3 +43,25 @@ export const initializeNeo4j = async () => {
     await session.close();
   }
 };
+
+export const testNeo4jConnection = async () => {
+  const session = createNeo4jSession();
+  try {
+    const result = await session.run(`
+        MERGE (n:TestNode {id: 1}) 
+        ON CREATE SET n.count = 1
+        ON MATCH SET n.count = n.count + 1
+        RETURN n.count AS count
+      `);
+
+    const count = result.records[0].get('count');
+    logData(`TestNode count updated: ${count}`, 'neo4jTestNodeUpdate', 1, { count });
+
+    return count;
+  } catch (err) {
+    logError('Error updating TestNode', 'neo4jTestNodeError', 10, err);
+    return null;
+  } finally {
+    await session.close();
+  }
+};

@@ -18,6 +18,7 @@ export const getCassandraDBClient = async (): Promise<Client> => {
         username: process.env.ASTRA_DB_CLIENT_ID,
         password: process.env.ASTRA_DB_CLIENT_SECRET,
       },
+      keyspace: process.env.ASTRA_DB_KEYSPACE,
     });
 
     try {
