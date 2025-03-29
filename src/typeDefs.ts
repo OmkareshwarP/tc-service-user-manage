@@ -5,6 +5,7 @@ export interface IUser {
   username: string;
   name: string;
   profilePictureMediaId: string;
+  headerPictureMediaId: string;
   signUpIpv4Address: string;
   moderationStatus: string;
   deletionStatus: string;

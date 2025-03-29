@@ -20,3 +20,9 @@ export const isValidName = (name: string): boolean => {
   }
   return false;
 };
+
+export const recommendedUserSections = {
+  suggestedUsers: {
+    title: 'You Might Like',
+  },
+};
