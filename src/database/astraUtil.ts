@@ -72,13 +72,28 @@ export const closeCassandraDBClient = async () => {
 };
 
 export const initializeAstraDB = async () => {
-  const client = await getCassandraDBClient();
-
   try {
+    const client = await getCassandraDBClient();
+
     await client.execute('SELECT release_version FROM system.local');
     logData('Connected to Astra DB successfully', 'astraConnected', 1, {});
   } catch (err) {
     logError('Failed to connect to Astra DB', 'astraConnectionError', 10, err);
     process.exit(1);
+  }
+};
+
+export const keepAstraDBActive = async () => {
+  try {
+    const client = await getCassandraDBClient();
+
+    const query = `SELECT release_version FROM system.local`;
+
+    const result = await client.execute(query);
+    logData('Astra DB keep-alive query executed', 'astraKeepAlive', 1, {
+      release_version: result.rows[0]?.release_version || 'unknown',
+    });
+  } catch (err) {
+    logError('Error running Astra DB keep-alive query', 'astraKeepAliveError', 10, err);
   }
 };

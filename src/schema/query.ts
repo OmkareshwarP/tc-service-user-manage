@@ -1,7 +1,7 @@
-import { extendType, nonNull, nullable, stringArg } from 'nexus';
-import { generateResponse, isValidUsername, logError } from '../utils/index.js';
+import { extendType, intArg, nonNull, nullable, stringArg } from 'nexus';
+import { generateResponse, isValidUsername, logError, recommendedUserSections } from '../utils/index.js';
 import AuthUtil from '../auth/index.js';
-import { testNeo4jConnection } from '../database/neo4jUtil.js';
+import { monitorHandler } from '../utils/monitorUtil.js';
 
 export const UserQueries = extendType({
   type: 'Query',
@@ -10,7 +10,7 @@ export const UserQueries = extendType({
       type: 'GenericResponse',
       async resolve() {
         try {
-          await testNeo4jConnection();
+          await monitorHandler();
           return generateResponse(false, 'fecthed successfully', '', 200, 'Hello world!');
         } catch (error) {
           logError(error.message, 'helloError', 5, error);
@@ -131,6 +131,50 @@ export const UserQueries = extendType({
         } catch (error) {
           logError(error.message, 'getFollowingListByUserIdError', 5, error, { args: req.body?.variables });
           return generateResponse(true, `Something went wrong while getting following list. We're working on it`, 'getFollowingListByUserIdError', 500, []);
+        }
+      },
+    });
+    t.field('checkUserFollowStatus', {
+      type: 'CheckUserFollowStatusResponse',
+      args: {
+        followeeUserId: nonNull(stringArg()),
+      },
+      async resolve(_, { followeeUserId }, { dataSources, req }) {
+        const token = req.headers.authorization;
+        const user = await AuthUtil().verifyToken(token);
+        try {
+          if (!user.userId || !followeeUserId) {
+            return generateResponse(true, 'Something went wrong while validating your request', 'inputParamsValidationFailed', 403, null);
+          }
+          const response = await dataSources.UserAPI().checkUserFollowStatus(user.userId, followeeUserId);
+          return response;
+        } catch (error) {
+          logError(error.message, 'checkUserFollowStatusError', 5, error, { args: req.body?.variables, followerId: user.userId });
+          return generateResponse(true, `Something went wrong while checking user follow status. We're working on it`, 'checkUserFollowStatusError', 500, null);
+        }
+      },
+    });
+    t.field('getRecommendedUsers', {
+      type: 'GetRecommendedUsersResponse',
+      args: {
+        sectionId: nonNull(stringArg()),
+        pageSize: nullable(intArg()),
+      },
+      async resolve(_, { sectionId, pageSize }, { dataSources, req }) {
+        const token = req.headers.authorization;
+        const user = await AuthUtil().verifyToken(token);
+        try {
+          if (!sectionId) {
+            return generateResponse(true, 'Something went wrong while validating your request', 'inputParamsValidationFailed', 403, null);
+          }
+          if (!recommendedUserSections[sectionId]) {
+            return generateResponse(true, 'Section does not exists.', 'sectionNotFound', 404, null);
+          }
+          const response = await dataSources.UserAPI().getRecommendedUsers(user.userId, sectionId, pageSize);
+          return response;
+        } catch (error) {
+          logError(error.message, 'getRecommendedUsersError', 5, error, { args: req.body?.variables, userId: user.userId });
+          return generateResponse(true, `Something went wrong while fetching recommended users. We're working on it`, 'getRecommendedUsersError', 500, null);
         }
       },
     });
