@@ -44,7 +44,7 @@ export const initializeNeo4j = async () => {
   }
 };
 
-export const testNeo4jConnection = async () => {
+export const keepNeo4jDBActive = async () => {
   const session = createNeo4jSession();
   try {
     const result = await session.run(`
@@ -55,12 +55,9 @@ export const testNeo4jConnection = async () => {
       `);
 
     const count = result.records[0].get('count');
-    logData(`TestNode count updated: ${count}`, 'neo4jTestNodeUpdate', 1, { count });
-
-    return count;
+    logData(`TestNode count updated: ${count}`, 'keepNeo4jDBActive', 1, { count });
   } catch (err) {
-    logError('Error updating TestNode', 'neo4jTestNodeError', 10, err);
-    return null;
+    logError('Error updating TestNode', 'keepNeo4jDBActive', 10, err);
   } finally {
     await session.close();
   }

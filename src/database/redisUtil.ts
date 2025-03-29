@@ -5,7 +5,13 @@ export let redis: RedisClientType;
 
 export const initializeRedis = () => {
   const redisUrl = process.env.REDIS_URL;
-  redis = Redis.createClient({ url: redisUrl });
+  redis = Redis.createClient({
+    url: redisUrl,
+    socket: {
+      keepAlive: 5000,
+      connectTimeout: 10000,
+    },
+  });
 
   redis
     .connect()
